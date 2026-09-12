@@ -211,7 +211,7 @@ def decode_content(content, encoding_header):
             content = gzip.decompress(content)
     return content
 
-def fetch_url_response(url, headers=(), timeout=15, data=None,
+def fetch_url_response(url, headers=(), timeout=30, data=None,
                        cookiejar_send=None, cookiejar_receive=None,
                        use_tor=True, max_redirects=None):
     '''
@@ -570,15 +570,13 @@ def prefix_urls(item):
 
 def add_extra_html_info(item):
     if item['type'] == 'video':
-        item['url'] = (URL_ORIGIN + '/watch?v=' + item['id']) if item.get('id') else None
-
+        item['url'] = concat_or_none(URL_ORIGIN, '/watch?v=', item['id'])
         video_info = {}
         for key in ('id', 'title', 'author', 'duration', 'author_id'):
             try:
                 video_info[key] = item[key]
             except KeyError:
                 video_info[key] = None
-
         item['video_info'] = json.dumps(video_info)
 
     elif item['type'] == 'playlist' and item['playlist_type'] == 'radio':
@@ -591,9 +589,13 @@ def add_extra_html_info(item):
         item['url'] = concat_or_none(URL_ORIGIN, '/playlist?list=', item['id'])
     elif item['type'] == 'channel':
         item['url'] = concat_or_none(URL_ORIGIN, "/channel/", item['id'])
+    else:
+        item['url'] = None
 
-    if item.get('author_id') and 'author_url' not in item:
-        item['author_url'] = URL_ORIGIN + '/channel/' + item['author_id']
+    if 'author_url' not in item:
+        item['author_url'] = concat_or_none(
+            URL_ORIGIN, '/channel/', item.get('author_id')
+        )
 
 
 def check_gevent_exceptions(*tasks):
@@ -769,6 +771,22 @@ INNERTUBE_CLIENTS = {
             },
         },
         'INNERTUBE_CONTEXT_CLIENT_NAME': 28,
+        'REQUIRE_JS_PLAYER': False,
+    },
+    'visionos': {
+        'INNERTUBE_API_KEY': 'AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w',
+        'INNERTUBE_CONTEXT': {
+            'client': {
+                'clientName': 'VISIONOS',
+                'clientVersion': '1.02',
+                'deviceMake': 'Apple',
+                'deviceModel': 'RealityDevice17,1',
+                'userAgent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15',
+                'osName': 'visionOS',
+                'osVersion': '26.5.23O471',
+            },
+        },
+        'INNERTUBE_CONTEXT_CLIENT_NAME': 101,
         'REQUIRE_JS_PLAYER': False,
     },
 }
